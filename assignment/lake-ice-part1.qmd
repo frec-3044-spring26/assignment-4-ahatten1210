@@ -75,8 +75,7 @@ ggplot(sunapee, aes(x = year, y = ice_off_doy))+
   geom_point() +
   geom_line() +
   labs(title = "Lake Sunapee ice off day over time",
-       x = "year", y = "ice off day") +
-  theme_classic()
+       x = "year", y = "ice off day") 
   
 ```
 
@@ -191,9 +190,12 @@ Now, to visualize the residuals, use `geom_histogram()` to plot them as a histog
 Show Histogram and answer the following question: do the residuals meet the assumptions of the linear regression? (are the residuals normally distributed with the distribution centered around zero)?
 
 **Answer 6:**
+The residuals do meet the assumptions of the linear regression as they are normally distributed
+centered around zero. 
 
 ```{r}
-
+ggplot(sunapee, aes(x = residual)) +
+  geom_histogram(bins = 30, color = "black", fill = "lightblue4")
 
 ```
 
@@ -208,6 +210,9 @@ Based on the `summary()` above, what is the p-value for the slope?
 
 **Answer 7:**
 
+The p-value 2.504e-09.
+
+
 ## The slope physically meaningful
 
 A slope value could have a low probability of being 0 (thus we have a strong belief that it is not zero), but the magnitude of change is functionally meaningless in the physical world (i.e., the rate of change is so small that we would not think much of it). This can occur particularly when analyzing large datasets.
@@ -217,6 +222,9 @@ A slope value could have a low probability of being 0 (thus we have a strong bel
 Based on the slope value, how many more years are needed to pass before the lake has a 1 week change in ice off doy? Do you think this is meaningful? Why?
 
 **Answer 8:**
+Based on the slope value, around 66 years are needed to pass before the lake has a 1 week change. I think that
+this is meaningful because it shows how over the years things slowly change.
+
 
 ## Overall model assessment
 
@@ -224,13 +232,26 @@ Based on the slope value, how many more years are needed to pass before the lake
 
 How comfortable are you proceeding with using this linear model for additional analysis and prediction? Why? (I am not looking for your gut answer, rather I want you to apply concepts taught in this module to justify your answer)
 
+
 **Answer 9:**
+
+I am decently comfortable with using this model for additional analysis. I think that the data makes sense and the visual representations from the histogram and graphs as well really help see that. 
 
 **Question 10:**
 Now plot the data for Lake Sunapee (just like above - year on x-axis vs. ice of doy on y axis) but add the line from your regression results (e.g., fit intercept and slope). You will use the [`geom_abline`](https://ggplot2.tidyverse.org/reference/geom_abline.html). 
 
 **Answer 10:**
 ```{r}
+
+ggplot(sunapee, aes(x = year, y = ice_off_doy))+
+  geom_abline(intercept = fit$coefficients[1],
+              slope = fit$coefficients[2],
+              color = "red",
+              size = 1)+
+  geom_point() + 
+  geom_line() + 
+  labs(title = "Lake Sunapee ice off day over time",
+       x = "year", y = "ice off day") 
 
 ```
 
@@ -246,6 +267,32 @@ The goal of this question is to make a forecast of the future ice-off day (with 
 **Answer 11:**
 
 ```{r}
+#ice-off day of year 2040
+
+predict_2040 <- (-0.1060227 * 2040) + 318.9485608
+  print(predict_2040)
+#Answer = 102.6623
+
+#90% confidence interval
+
+lower_interval <- quantile(sunapee$residual, 0.05)
+upper_interval <- quantile(sunapee$residual, 0.95)
+
+lower_interval
+upper_interval
+
+#90% confidence interval with 2040 prediction
+
+lower_ci <- predict_2040 + lower_interval
+upper_ci <- predict_2040 + upper_interval
+lower_ci 
+upper_ci
+# 95% = 116.8138, 5% = 82.23494
+
+# confidence interval width
+ci_width <- upper_ci - lower_ci
+ci_width
+
 
 ```
 
@@ -260,6 +307,33 @@ Use the skills developed above to evaluate the question "Is the ice-off day of y
 **Answer 12:**
 
 Use a mix of code, figures, and text to present your analysis.  If you want to compare slopes, be sure they are on the same plot.
+```{r}
+
+early_period <- sunapee |> 
+  filter(year < 1970)
+
+later_period <- sunapee |> 
+  filter(year >= 1970)
+
+fit_early <- lm(ice_off_doy ~ year, data = early_period)
+fit_late  <- lm(ice_off_doy ~ year, data = later_period)
+
+combined <- rbind(
+  early_period |> mutate(period = "Before 1970"),
+  later_period |> mutate(period = "1970 and after")
+)
+
+# Plot
+ggplot(combined, aes(x = year, y = ice_off_doy, color = period)) +
+  geom_point(alpha = 0.6) +
+  geom_line() +
+  labs(
+    title = "Lake Sunapee Ice-Off Day Over Time",
+    x = "Year",
+    y = "Ice-Off Day of Year"
+  ) 
+```
+The ice-off day of year is changing more quickly is changing more quickly in recent years. Initially to divide the data, I filtered the sunapee data set to be either "<1970" or ">=1970) and then from there, i made linear models to see the data from the 2 separate periods. From looking at the data, you can see that for the earlier time period the slope is -0.109668 and the later period is -0.3023923. That means ice-off day is changing about 0.11 earlier days per year for the earlier period, while its changing about 0.30 days earlier per year for the later period. In recent times, change has been happening a lot more rapidly, which explains the larger, steeper negative slope.
 
 # Rendering and committing
 
